@@ -31,11 +31,11 @@ if ($is_edit) {
     $stmt->execute([$user_id]);
     $social = $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC);
     
-    $stmt = $db->prepare("SELECT * FROM bank_accounts WHERE user_id = ?");
+    $stmt = $db->prepare("SELECT * FROM bank_accounts WHERE agent_id = ?");
     $stmt->execute([$user_id]);
     $banks = $stmt->fetchAll();
-    
-    $stmt = $db->prepare("SELECT * FROM videos WHERE user_id = ? ORDER BY display_order");
+
+    $stmt = $db->prepare("SELECT * FROM videos WHERE agent_id = ?");
     $stmt->execute([$user_id]);
     $videos = $stmt->fetchAll();
     
@@ -68,14 +68,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_POST['email'], $_POST['design_template'], $user_id
             ]);
         } else {
+            // Generate agent_id and referral_code
+            $agent_id = generateRandomString(8);
+            $referral_code = generateRandomString(6);
+
             $stmt = $db->prepare("
-                INSERT INTO users (firstname, lastname, company, position, address, mobile, mobile1, mobile2, email, design_template)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO users (firstname, lastname, company, position, address, mobile, mobile1, mobile2, email, design_template, agent_id, referral_code)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $stmt->execute([
                 $_POST['firstname'], $_POST['lastname'], $_POST['company'], $_POST['position'],
-                $_POST['address'], $_POST['mobile'], $_POST['mobile1'], $_POST['mobile2'], 
-                $_POST['email'], $_POST['design_template']
+                $_POST['address'], $_POST['mobile'], $_POST['mobile1'], $_POST['mobile2'],
+                $_POST['email'], $_POST['design_template'], $agent_id, $referral_code
             ]);
             $user_id = $db->lastInsertId();
         }
@@ -167,8 +171,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Address</label>
-                        <textarea name="address" rows="2" 
+                        <textarea name="address" id="address" rows="2"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"><?php echo htmlspecialchars($user['address'] ?? ''); ?></textarea>
+                        <button type="button" onclick="getCurrentLocation()" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">Get Current Location</button>
                     </div>
                 </div>
             </div>
@@ -242,14 +247,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="radio" name="design_template" value="design-1" 
                             <?php echo ($user['design_template'] ?? 'design-1') === 'design-1' ? 'checked' : ''; ?> 
                             class="peer sr-only">
-                        <div class="border-2 border-gray-300 rounded-lg p-4 peer-checked:border-orange-500 peer-checked:bg-orange-50 transition">
-                            <div class="flex items-center justify-between mb-2">
+                        <div class="border-2 border-gray-300 rounded-lg p-4 peer-checked:border-orange-500 peer-checked:bg-orange-50 transition cursor-pointer">
+                            <div class="mb-2">
                                 <span class="font-semibold text-gray-800">Design 1</span>
-                                <span class="w-5 h-5 rounded-full border-2 border-gray-300 peer-checked:border-orange-500 peer-checked:bg-orange-500 flex items-center justify-center">
-                                    <svg class="w-3 h-3 text-white hidden peer-checked:block" fill="currentColor" viewBox="0 0 12 12">
-                                        <path d="M10 3L4.5 8.5 2 6"/>
-                                    </svg>
-                                </span>
                             </div>
                             <p class="text-sm text-gray-600">Classic layout with gradient overlays</p>
                         </div>
@@ -259,14 +259,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="radio" name="design_template" value="design-2" 
                             <?php echo ($user['design_template'] ?? '') === 'design-2' ? 'checked' : ''; ?> 
                             class="peer sr-only">
-                        <div class="border-2 border-gray-300 rounded-lg p-4 peer-checked:border-orange-500 peer-checked:bg-orange-50 transition">
-                            <div class="flex items-center justify-between mb-2">
+                        <div class="border-2 border-gray-300 rounded-lg p-4 peer-checked:border-orange-500 peer-checked:bg-orange-50 transition cursor-pointer">
+                            <div class="mb-2">
                                 <span class="font-semibold text-gray-800">Design 2</span>
-                                <span class="w-5 h-5 rounded-full border-2 border-gray-300 peer-checked:border-orange-500 peer-checked:bg-orange-500 flex items-center justify-center">
-                                    <svg class="w-3 h-3 text-white hidden peer-checked:block" fill="currentColor" viewBox="0 0 12 12">
-                                        <path d="M10 3L4.5 8.5 2 6"/>
-                                    </svg>
-                                </span>
                             </div>
                             <p class="text-sm text-gray-600">Modern layout with clean aesthetics</p>
                         </div>
@@ -342,5 +337,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <?php endif; ?>
     </div>
+
+    <script>
+        // Get current location
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    // Use reverse geocoding to get address (free BigDataCloud API)
+                    fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data && data.localityInfo && data.localityInfo.administrative) {
+                                const admin = data.localityInfo.administrative;
+                                const address = `${admin[admin.length - 1].name}, ${admin[admin.length - 2].name}, ${data.countryName}`;
+                                document.getElementById('address').value = address;
+                            } else if (data && data.city) {
+                                document.getElementById('address').value = `${data.city}, ${data.countryName}`;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Unable to get address from location');
+                        });
+                }, function(error) {
+                    alert('Unable to get your location. Please check your browser settings.');
+                });
+            } else {
+                alert('Geolocation is not supported by this browser.');
+            }
+        }
+    </script>
 </body>
 </html>
