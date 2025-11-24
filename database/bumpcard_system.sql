@@ -79,12 +79,12 @@ INSERT INTO `admin_users` (`id`, `username`, `password`, `email`, `full_name`, `
 
 CREATE TABLE `bank_accounts` (
   `id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
+  `agent_id` int(11) NOT NULL,
   `bank_name` varchar(100) NOT NULL,
   `account_no` varchar(50) NOT NULL,
   `account_type` varchar(100) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `created_by` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_by` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -181,6 +181,11 @@ CREATE TABLE `users` (
   `lastname` varchar(50) NOT NULL,
   `company` varchar(100) DEFAULT NULL,
   `position` varchar(100) DEFAULT NULL,
+  `company_logo` varchar(255) DEFAULT NULL,
+  `location` text DEFAULT NULL,
+  `referral_code` varchar(50) DEFAULT NULL,
+  `referred_by` int(11) DEFAULT NULL,
+  `referral_count` int(11) DEFAULT 0,
   `address` text DEFAULT NULL,
   `mobile` varchar(20) DEFAULT NULL,
   `mobile1` varchar(20) DEFAULT NULL,
@@ -231,15 +236,12 @@ INSERT INTO `user_bio` (`id`, `user_id`, `title`, `description`, `created_at`, `
 
 CREATE TABLE `videos` (
   `id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `title_content` varchar(255) DEFAULT NULL,
+  `agent_id` int(11) NOT NULL,
   `description` text DEFAULT NULL,
-  `embed_code` text DEFAULT NULL,
-  `video_type` enum('youtube','facebook','direct') DEFAULT 'youtube',
-  `status` tinyint(1) DEFAULT 1,
-  `display_order` int(11) DEFAULT 0,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `embed` varchar(255) DEFAULT NULL,
+  `created` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated` date DEFAULT NULL,
+  `status` tinyint(1) DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -266,7 +268,7 @@ ALTER TABLE `admin_users`
 --
 ALTER TABLE `bank_accounts`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `user_id` (`user_id`);
+  ADD KEY `agent_id` (`agent_id`);
 
 --
 -- Indexes for table `contact_submissions`
@@ -301,7 +303,8 @@ ALTER TABLE `social_media`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `digitalcard_id` (`digitalcard_id`);
+  ADD UNIQUE KEY `digitalcard_id` (`digitalcard_id`),
+  ADD KEY `referred_by` (`referred_by`);
 
 --
 -- Indexes for table `user_bio`
@@ -315,7 +318,7 @@ ALTER TABLE `user_bio`
 --
 ALTER TABLE `videos`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `user_id` (`user_id`);
+  ADD KEY `agent_id` (`agent_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -396,7 +399,7 @@ ALTER TABLE `activity_log`
 -- Constraints for table `bank_accounts`
 --
 ALTER TABLE `bank_accounts`
-  ADD CONSTRAINT `bank_accounts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `bank_accounts_ibfk_1` FOREIGN KEY (`agent_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `contact_submissions`
@@ -429,10 +432,16 @@ ALTER TABLE `user_bio`
   ADD CONSTRAINT `user_bio_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `users`
+--
+ALTER TABLE `users`
+  ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`referred_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+
+--
 -- Constraints for table `videos`
 --
 ALTER TABLE `videos`
-  ADD CONSTRAINT `videos_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `videos_ibfk_1` FOREIGN KEY (`agent_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

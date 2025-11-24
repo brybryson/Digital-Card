@@ -1,0 +1,32 @@
+-- Alter bank_accounts table
+ALTER TABLE bank_accounts CHANGE user_id agent_id INT(11) NOT NULL;
+ALTER TABLE bank_accounts DROP COLUMN created_at;
+ALTER TABLE bank_accounts DROP COLUMN updated_at;
+ALTER TABLE bank_accounts ADD COLUMN created_by TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE bank_accounts ADD COLUMN updated_by INT(11) DEFAULT NULL;
+ALTER TABLE bank_accounts DROP INDEX user_id;
+ALTER TABLE bank_accounts ADD KEY agent_id (agent_id);
+ALTER TABLE bank_accounts DROP FOREIGN KEY bank_accounts_ibfk_1;
+ALTER TABLE bank_accounts ADD CONSTRAINT bank_accounts_ibfk_1 FOREIGN KEY (agent_id) REFERENCES users (id) ON DELETE CASCADE;
+
+-- Alter videos table
+ALTER TABLE videos CHANGE user_id agent_id INT(11) NOT NULL;
+ALTER TABLE videos DROP COLUMN title_content;
+ALTER TABLE videos DROP COLUMN video_type;
+ALTER TABLE videos DROP COLUMN display_order;
+ALTER TABLE videos CHANGE embed_code embed VARCHAR(255) DEFAULT NULL;
+ALTER TABLE videos CHANGE created_at created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE videos CHANGE updated_at updated DATE DEFAULT NULL;
+ALTER TABLE videos DROP INDEX user_id;
+ALTER TABLE videos ADD KEY agent_id (agent_id);
+ALTER TABLE videos DROP FOREIGN KEY videos_ibfk_1;
+ALTER TABLE videos ADD CONSTRAINT videos_ibfk_1 FOREIGN KEY (agent_id) REFERENCES users (id) ON DELETE CASCADE;
+
+-- Alter users table
+ALTER TABLE users ADD COLUMN company_logo VARCHAR(255) DEFAULT NULL AFTER position;
+ALTER TABLE users ADD COLUMN location TEXT DEFAULT NULL AFTER company_logo;
+ALTER TABLE users ADD COLUMN referral_code VARCHAR(50) DEFAULT NULL AFTER location;
+ALTER TABLE users ADD COLUMN referred_by INT(11) DEFAULT NULL AFTER referral_code;
+ALTER TABLE users ADD COLUMN referral_count INT(11) DEFAULT 0 AFTER referred_by;
+ALTER TABLE users ADD KEY referred_by (referred_by);
+ALTER TABLE users ADD CONSTRAINT users_ibfk_1 FOREIGN KEY (referred_by) REFERENCES users (id) ON DELETE SET NULL;
