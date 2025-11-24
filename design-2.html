@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Card</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-100 flex justify-center" style="font-family: 'Inter', sans-serif;">
+    <div class="w-full max-w-[485px] bg-white overflow-hidden fade-in">
+        <!-- Photo -->
+        <div class="relative">
+            <img src=""
+                   alt="Profile"
+                   class="w-full h-auto"
+                   data-api="photo">
+            <div class="absolute inset-0 bg-gradient-to-b from-white/0 to-white/40"></div>
+            <div id="photoSkeleton" class="absolute inset-0 bg-gray-300 animate-pulse flex items-center justify-center rounded-lg">
+                <svg class="w-11 h-11 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 16 5-7 6 6.5m6.5 2.5L16 13l-4.286 6M14 10h.01M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/>
+                </svg>
+            </div>
+            <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center justify-center space-x-6 z-10">
+                <a href="tel:" data-type="mobile1" class="w-12 h-12 rounded-3xl bg-[#FDFDFD] flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition">
+                    <img src="images/iPhone.png" alt="iPhone" class="w-7 h-7 object-contain">
+                </a>
+                <a href="" data-type="location" target="_blank" class="w-12 h-12 rounded-3xl bg-[#FDFDFD] flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition">
+                    <img src="images/location-pin.png" alt="Location" class="w-7 h-7 object-contain">
+                </a>
+                <a href="sms:" data-type="sms" class="w-12 h-12 rounded-3xl bg-[#FDFDFD] flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition">
+                    <img src="images/sms.png" alt="SMS" class="w-7 h-7 object-contain">
+                </a>
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-b from-white/0 to-white/40"></div>
+        </div>
+
+        
+        <!-- Name and Position -->
+        <div class="px-6 py-9 text-left relative">
+            <img src="images/3AM-LOGO.png"
+                   alt="Logo"
+                   class="absolute top-6 right-8 w-20 h-20">
+            <div class="name-text mb-2" style="font-family: 'Inter', sans-serif; font-weight: bold; font-size: 30px; line-height: 30px; white-space: nowrap;">
+                <div class="animate-pulse">
+                    <div class="h-8 bg-gray-300 rounded w-48"></div>
+                </div>
+            </div>
+            <div class="position-text text-lg mb-1" style="line-height: 1.1;" data-api="position">
+                <div class="animate-pulse">
+                    <div class="h-4 bg-gray-300 rounded w-32"></div>
+                </div>
+            </div>
+            <div class="company-text text-lg" style="line-height: 1.1;" data-api="company">
+                <div class="animate-pulse">
+                    <div class="h-4 bg-gray-300 rounded w-40"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- User Bio -->
+        <div class="user-bio" style="width: 354px; height: auto; padding: 20px; border-radius: 20px; background-color: #F4F4F4; margin: 30px auto 20px auto;">
+            <h2 class="font-bold text-gray-800 mb-3 text-center" data-api="bio-title">
+                <div class="animate-pulse">
+                    <div class="h-6 bg-gray-300 rounded w-32 mx-auto"></div>
+                </div>
+            </h2>
+            <p class="text-gray-600 text-sm leading-relaxed text-justify" data-api="bio-description">
+                <div class="animate-pulse space-y-2">
+                    <!-- <div class="h-4 bg-gray-300 rounded"></div>
+                    <div class="h-4 bg-gray-300 rounded w-5/6"></div>
+                    <div class="h-4 bg-gray-300 rounded w-4/6"></div>
+                    <div class="h-4 bg-gray-300 rounded w-3/6"></div> -->
+                </div>
+            </p>
+            <div class="flex justify-center mt-8 mb-4">
+                <button id="saveContactBtn" class="w-full h-[54px] bg-black text-white rounded-[40px] font-semibold hover:scale-105 active:scale-95 transition">Save Contact</button>
+            </div>
+        </div>
+
+        <!-- Profile Section -->
+        <div class="px-6 pb-6 mt-16">
+
+            <!-- Social Links -->
+            <div class="space-y-2 mb-4">
+
+                <!-- Phone Number #2 -->
+                <a href="" class="flex items-center p-4 bg-white rounded-lg transition-all duration-300 hover:bg-gray-100 hover:shadow-lg hover:scale-105" data-api="social-ig" data-type="phone">
+                    <img src="images/phone-icon.png" alt="Instagram" class="w-16 h-16 mr-4 object-contain">
+                    <div class="flex-1 ml-4">
+                        <h3 class="font-bold text-gray-800 text-lg" style="line-height: 1.3;">Secondary Number</h3>
+                        <p class="text-gray-600 text-base" style="line-height: 1.3;">Get in touch with us</p>
+                    </div>
+                </a>
+
+                <!-- Divider -->
+                <div class="flex justify-center py-1">
+                    <div class="w-[400px] h-px bg-[#DADADA]"></div>
+                </div>
+
+                <!-- Email Address -->
+                <a href="" class="flex items-center p-4 bg-white rounded-lg transition-all duration-300 hover:bg-gray-100 hover:shadow-lg hover:scale-105" data-api="social-ig" data-type="email">
+                    <img src="images/mail-icon.png" alt="Instagram" class="w-16 h-16 mr-4 object-contain">
+                    <div class="flex-1 ml-4">
+                        <h3 class="font-bold text-gray-800 text-lg" style="line-height: 1.3;">Email</h3>
+                        <p class="text-gray-600 text-base" style="line-height: 1.3;">Send us an email</p>
+                    </div>
+                </a>
+
+                <!-- Divider -->
+                <div class="flex justify-center py-1">
+                    <div class="w-[400px] h-px bg-[#DADADA]"></div>
+                </div>
+
+                <!-- Facebook -->
+                <a href="" target="_blank" class="flex items-center p-4 bg-white rounded-lg transition-all duration-300 hover:bg-gray-100 hover:shadow-lg hover:scale-105" data-api="social-fb">
+                    <img src="images/facebook-icon.png" alt="Facebook" class="w-16 h-16 mr-4 object-contain">
+                    <div class="flex-1 ml-4">
+                        <h3 class="font-bold text-gray-800 text-lg" style="line-height: 1.3;">Facebook</h3>
+                        <p class="text-gray-600 text-base" style="line-height: 1.3;">Like us on Facebook</p>
+                    </div>
+                </a>
+                <!-- Divider -->
+                <div class="flex justify-center py-1">
+                    <div class="w-[400px] h-px bg-[#DADADA]"></div>
+                </div>
+
+                <!-- Instagram -->
+                <a href="" target="_blank" class="flex items-center p-4 bg-white rounded-lg transition-all duration-300 hover:bg-gray-100 hover:shadow-lg hover:scale-105" data-api="social-ig">
+                    <img src="images/instagram-logo.png" alt="Instagram" class="w-16 h-16 mr-4 object-contain">
+                    <div class="flex-1 ml-4">
+                        <h3 class="font-bold text-gray-800 text-lg" style="line-height: 1.3;">Instagram</h3>
+                        <p class="text-gray-600 text-base" style="line-height: 1.3;">Follow us on Instagram</p>
+                    </div>
+                </a>
+
+                <!-- Divider -->
+                <div class="flex justify-center py-1">
+                    <div class="w-[400px] h-px bg-[#DADADA]"></div>
+                </div>
+
+
+                <!-- 3AM Digital Media -->
+                <a href="" target="_blank" class="flex items-center p-4 bg-white rounded-lg transition-all duration-300 hover:bg-gray-100 hover:shadow-lg hover:scale-105" data-api="agent-link">
+                    <img src="images/3AM-DigitalMedia-logo.png" alt="3AM Digital Media" class="w-16 h-16 mr-4 object-contain">
+                    <div class="flex-1 ml-4">
+                        <h3 class="font-bold text-gray-800 text-lg" style="line-height: 1.3;">3AM Digital Media</h3>
+                        <p class="text-gray-600 text-base" style="line-height: 1.3;">Visit for more information</p>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- Video Section -->
+            <div class="mb-20 mt-20 mx-auto" style="background-color: #F4F4F4; border-radius: 28px; width: 420px; height: 400px; padding: 20px; box-sizing: border-box;">
+                <div id="videoContainer" class="space-y-12 h-full overflow-y-auto"></div>
+            </div>
+
+            <!-- Bank Accounts -->
+            <div class="mt-20 mb-16">
+                <h3 class="font-bold text-gray-800 mb-3 text-lg text-center">Bank Accounts</h3>
+                <div class="grid grid-cols-3 gap-4" data-api="bank-accounts">
+                    <!-- Banks will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Modal -->
+            <div id="bankModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg max-w-sm w-full mx-4 overflow-hidden">
+                    <!-- <div class="p-4 text-center">
+                    </div> -->
+                    <div class="pt-4 pb-8 px-6 text-center">
+                        <img id="modalLogo" src="" alt="Logo" class="w-auto h-20 mx-auto my-8 object-contain">
+                        <h3 id="modalTitle" class="text-gray-800 font-bold text-lg mb-4">Bank Details</h3>
+                        <div id="modalContent" class="space-y-1 text-center mb-12" style="line-height: 1.2;"></div>
+                        <button id="closeModal" class="bg-black text-white font-semibold py-2 rounded-[40px] w-[280px] mb-4" style="font-family: 'Inter', sans-serif;">Close</button>
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="h-[43px] flex flex-col justify-center items-center text-xs" style="width: 100vw; margin-left: calc(-50vw + 50%); font-style: italic; color: #5F5F5F; opacity: 0.8; margin-bottom: 10px;">
+            <p>©Copyright 2025 All Rights Reserve.</p>
+            <p>Powered by <em style="font-weight: bold; color: #5F5F5F;">NLP Business Development Services</em></p>
+        </footer>
+    </div>
+
+    <!-- Floating Buttons -->
+    <div id="floatingButtons" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 w-[280px] h-[80px] bg-black rounded-[40px] flex items-center justify-around z-50 transition-all duration-500">
+        <a href="https://nlpbds.com/bumpcards/jb1/bumpcard-v/registration/fae5e854d6fae5ee42911677c739ee17344861677c739202" class="w-16 h-14 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300">
+            <img src="images/prototype-2/diamond.png" alt="JustBump" class="w-10 h-10 object-contain transition-all duration-300">
+        </a>
+
+        <a href="design-2.html" class="w-16 h-14 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 bg-[#363636] rounded-[40px]">
+            <img src="images/prototype-2/home.png" alt="Save to Contact" class="w-8 h-8 object-contain transition-all duration-300" style="filter: brightness(2);">
+        </a>
+
+        <a href="connect.html" class="w-16 h-14 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300">
+            <img src="images/prototype-2/link.png" alt="Let's Connect" class="w-9 h-9 object-contain transition-all duration-300">
+        </a>
+    </div>
+    <script src="script/design-2-info.js"></script>
+</body>
+</html>
