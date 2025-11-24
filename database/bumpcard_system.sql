@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 24, 2025 at 06:20 AM
+-- Generation Time: Nov 24, 2025 at 07:34 AM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -43,7 +43,7 @@ CREATE TABLE `activity_log` (
 
 INSERT INTO `activity_log` (`id`, `admin_id`, `user_id`, `action`, `description`, `ip_address`, `created_at`) VALUES
 (1, 1, NULL, 'login', 'Admin logged in', '::1', '2025-11-24 05:02:34'),
-(2, 1, 1, 'create_user', 'User created', '::1', '2025-11-24 05:13:22');
+(5, 1, 3, 'create_user', 'User created', '::1', '2025-11-24 06:24:12');
 
 -- --------------------------------------------------------
 
@@ -164,8 +164,8 @@ CREATE TABLE `social_media` (
 --
 
 INSERT INTO `social_media` (`id`, `user_id`, `platform`, `title`, `link`, `status`, `created_at`, `updated_at`) VALUES
-(1, 1, 'FB', NULL, 'https://www.facebook.com/BryantMelliza/', 1, '2025-11-24 05:13:22', '2025-11-24 05:13:22'),
-(2, 1, 'IG', NULL, 'https://www.instagram.com/', 1, '2025-11-24 05:13:22', '2025-11-24 05:13:22');
+(5, 3, 'FB', NULL, 'https://www.facebook.com/', 1, '2025-11-24 06:24:12', '2025-11-24 06:24:12'),
+(6, 3, 'IG', NULL, 'https://www.facebook.com/', 1, '2025-11-24 06:24:12', '2025-11-24 06:24:12');
 
 -- --------------------------------------------------------
 
@@ -176,7 +176,7 @@ INSERT INTO `social_media` (`id`, `user_id`, `platform`, `title`, `link`, `statu
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `digitalcard_id` varchar(50) DEFAULT NULL,
-  `agent_id` int(11) DEFAULT NULL,
+  `agent_id` varchar(50) DEFAULT NULL,
   `firstname` varchar(50) NOT NULL,
   `lastname` varchar(50) NOT NULL,
   `company` varchar(100) DEFAULT NULL,
@@ -203,8 +203,8 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `digitalcard_id`, `agent_id`, `firstname`, `lastname`, `company`, `position`, `address`, `mobile`, `mobile1`, `mobile2`, `email`, `photo`, `banner`, `design_template`, `status`, `created_at`, `updated_at`) VALUES
-(1, NULL, NULL, 'Bryant Iverson', 'Melliza', 'NU Fairview', 'Student', 'Caloocan City', '09398170375', '09431359316', 'N/A', 'bryantiversonmelliza03@gmail.com', NULL, NULL, 'design-2', 1, '2025-11-24 05:13:22', '2025-11-24 05:13:22');
+INSERT INTO `users` (`id`, `digitalcard_id`, `agent_id`, `firstname`, `lastname`, `company`, `position`, `company_logo`, `location`, `referral_code`, `referred_by`, `referral_count`, `address`, `mobile`, `mobile1`, `mobile2`, `email`, `photo`, `banner`, `design_template`, `status`, `created_at`, `updated_at`) VALUES
+(3, NULL, '34bc1ff1', 'jhgh', 'gjggh', 'ggj', 'gjhgjhgg', NULL, NULL, 'b544ac', NULL, 0, 'test', '213123', '22', '22', 'asaaaaa@gmail.com', NULL, NULL, 'design-2', 1, '2025-11-24 06:24:12', '2025-11-24 06:24:12');
 
 -- --------------------------------------------------------
 
@@ -226,7 +226,7 @@ CREATE TABLE `user_bio` (
 --
 
 INSERT INTO `user_bio` (`id`, `user_id`, `title`, `description`, `created_at`, `updated_at`) VALUES
-(1, 1, 'test', 'test', '2025-11-24 05:13:22', '2025-11-24 05:13:22');
+(4, 3, 'asd', 'asd', '2025-11-24 06:24:12', '2025-11-24 06:24:12');
 
 -- --------------------------------------------------------
 
@@ -239,9 +239,9 @@ CREATE TABLE `videos` (
   `agent_id` int(11) NOT NULL,
   `description` text DEFAULT NULL,
   `embed` varchar(255) DEFAULT NULL,
+  `status` tinyint(1) DEFAULT 1,
   `created` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated` date DEFAULT NULL,
-  `status` tinyint(1) DEFAULT 1
+  `updated` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -328,7 +328,7 @@ ALTER TABLE `videos`
 -- AUTO_INCREMENT for table `activity_log`
 --
 ALTER TABLE `activity_log`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `admin_users`
@@ -364,19 +364,19 @@ ALTER TABLE `design_settings`
 -- AUTO_INCREMENT for table `social_media`
 --
 ALTER TABLE `social_media`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `user_bio`
 --
 ALTER TABLE `user_bio`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `videos`
@@ -426,16 +426,16 @@ ALTER TABLE `social_media`
   ADD CONSTRAINT `social_media_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `user_bio`
---
-ALTER TABLE `user_bio`
-  ADD CONSTRAINT `user_bio_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
 -- Constraints for table `users`
 --
 ALTER TABLE `users`
   ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`referred_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `user_bio`
+--
+ALTER TABLE `user_bio`
+  ADD CONSTRAINT `user_bio_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `videos`
