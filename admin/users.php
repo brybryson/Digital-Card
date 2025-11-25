@@ -70,9 +70,14 @@ $users = $stmt->fetchAll();
     <!-- Main Content -->
     <div id="main-content" class="ml-64 p-8">
         <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">Users Management</h1>
-            <p class="text-gray-600 mt-1">Manage all digital card users</p>
+        <div class="mb-8 flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Users Management</h1>
+                <p class="text-gray-600 mt-1">Manage all digital card users</p>
+            </div>
+            <a href="user_add.php" class="px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-semibold rounded-lg hover:from-orange-600 hover:to-yellow-600 transition">
+                + Add New User
+            </a>
         </div>
 
         <!-- Search and Filter -->
