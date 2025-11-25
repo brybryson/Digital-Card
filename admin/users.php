@@ -128,11 +128,15 @@ $users = $stmt->fetchAll();
                         <tr class="hover:bg-gray-50 transition">
                             <td class="px-6 py-4">
                                 <div class="flex items-center space-x-3">
+                                    <?php if (!empty($user['photo'])): ?>
+                                    <img src="<?php echo htmlspecialchars($user['photo']); ?>" alt="Profile Photo" class="w-10 h-10 rounded-full object-cover border border-gray-200">
+                                    <?php else: ?>
                                     <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
                                         <span class="text-sm font-semibold text-gray-600">
                                             <?php echo strtoupper(substr($user['firstname'], 0, 1) . substr($user['lastname'], 0, 1)); ?>
                                         </span>
                                     </div>
+                                    <?php endif; ?>
                                     <div>
                                         <p class="text-sm font-semibold text-gray-800">
                                             <?php echo htmlspecialchars($user['firstname'] . ' ' . $user['lastname']); ?>

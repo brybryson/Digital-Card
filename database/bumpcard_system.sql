@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 24, 2025 at 07:34 AM
+-- Generation Time: Nov 24, 2025 at 08:31 AM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -150,10 +150,11 @@ CREATE TABLE `design_settings` (
 
 CREATE TABLE `social_media` (
   `id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `platform` enum('FB','IG','TW','LI','TT','YT') NOT NULL,
+  `agent_id` int(11) NOT NULL,
+  `platform` varchar(10) NOT NULL,
   `title` varchar(100) DEFAULT NULL,
   `link` varchar(255) DEFAULT NULL,
+  `custom_logo` varchar(255) DEFAULT NULL,
   `status` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -163,7 +164,7 @@ CREATE TABLE `social_media` (
 -- Dumping data for table `social_media`
 --
 
-INSERT INTO `social_media` (`id`, `user_id`, `platform`, `title`, `link`, `status`, `created_at`, `updated_at`) VALUES
+INSERT INTO `social_media` (`id`, `agent_id`, `platform`, `title`, `link`, `status`, `created_at`, `updated_at`) VALUES
 (5, 3, 'FB', NULL, 'https://www.facebook.com/', 1, '2025-11-24 06:24:12', '2025-11-24 06:24:12'),
 (6, 3, 'IG', NULL, 'https://www.facebook.com/', 1, '2025-11-24 06:24:12', '2025-11-24 06:24:12');
 
@@ -186,7 +187,6 @@ CREATE TABLE `users` (
   `referral_code` varchar(50) DEFAULT NULL,
   `referred_by` int(11) DEFAULT NULL,
   `referral_count` int(11) DEFAULT 0,
-  `address` text DEFAULT NULL,
   `mobile` varchar(20) DEFAULT NULL,
   `mobile1` varchar(20) DEFAULT NULL,
   `mobile2` varchar(20) DEFAULT NULL,
@@ -203,8 +203,8 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `digitalcard_id`, `agent_id`, `firstname`, `lastname`, `company`, `position`, `company_logo`, `location`, `referral_code`, `referred_by`, `referral_count`, `address`, `mobile`, `mobile1`, `mobile2`, `email`, `photo`, `banner`, `design_template`, `status`, `created_at`, `updated_at`) VALUES
-(3, NULL, '34bc1ff1', 'jhgh', 'gjggh', 'ggj', 'gjhgjhgg', NULL, NULL, 'b544ac', NULL, 0, 'test', '213123', '22', '22', 'asaaaaa@gmail.com', NULL, NULL, 'design-2', 1, '2025-11-24 06:24:12', '2025-11-24 06:24:12');
+INSERT INTO `users` (`id`, `digitalcard_id`, `agent_id`, `firstname`, `lastname`, `company`, `position`, `company_logo`, `location`, `referral_code`, `referred_by`, `referral_count`, `mobile`, `mobile1`, `mobile2`, `email`, `photo`, `banner`, `design_template`, `status`, `created_at`, `updated_at`) VALUES
+(3, NULL, '34bc1ff1', 'jhgh', 'gjggh', 'ggj', 'gjhgjhgg', NULL, NULL, 'b544ac', NULL, 0, '213123', '22', '22', 'asaaaaa@gmail.com', NULL, NULL, 'design-2', 1, '2025-11-24 06:24:12', '2025-11-24 06:24:12');
 
 -- --------------------------------------------------------
 
@@ -296,7 +296,8 @@ ALTER TABLE `design_settings`
 --
 ALTER TABLE `social_media`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `user_id` (`user_id`);
+  ADD UNIQUE KEY `unique_social_media` (`agent_id`, `platform`),
+  ADD KEY `user_id` (`agent_id`);
 
 --
 -- Indexes for table `users`
@@ -376,7 +377,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `user_bio`
 --
 ALTER TABLE `user_bio`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `videos`
@@ -423,7 +424,7 @@ ALTER TABLE `design_settings`
 -- Constraints for table `social_media`
 --
 ALTER TABLE `social_media`
-  ADD CONSTRAINT `social_media_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `social_media_ibfk_1` FOREIGN KEY (`agent_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `users`

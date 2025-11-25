@@ -178,6 +178,36 @@ function deleteFile($filename) {
     return false;
 }
 
+// Helper function to upload file and save social media info
+function uploadAndSaveSocialMedia($file, $user_id, $platform, $title = null, $link = null, $allowed_types = ['jpg', 'jpeg', 'png', 'gif'], $max_size = 5242880) {
+    try {
+        $db = getDB();
+
+        // First upload the file
+        $upload = uploadFile($file, $allowed_types, $max_size);
+        if (!$upload || !isset($upload['success']) || !$upload['success']) {
+            return $upload; // Return the error from uploadFile
+        }
+
+        $logo_url = $upload['url'];
+
+        // Save to social_media table
+        $stmt = $db->prepare("INSERT INTO social_media (agent_id, platform, link, title, custom_logo, status)
+            VALUES (?, ?, ?, ?, ?, 1) ON DUPLICATE KEY UPDATE link = VALUES(link), title = VALUES(title), custom_logo = VALUES(custom_logo)");
+        $stmt->execute([$user_id, $platform, $link, $title, $logo_url]);
+
+        return [
+            'success' => true,
+            'filename' => $upload['filename'],
+            'filepath' => $upload['filepath'],
+            'url' => $logo_url,
+            'social_media_id' => $db->lastInsertId()
+        ];
+    } catch(PDOException $e) {
+        return ['success' => false, 'error' => 'Database error: ' . $e->getMessage()];
+    }
+}
+
 // Helper function to format date
 function formatDate($date, $format = 'M j, Y g:i A') {
     return date($format, strtotime($date));
@@ -263,10 +293,10 @@ function checkAdminPermission($required_role = 'admin') {
     if (!isLoggedIn()) {
         redirect('login.php');
     }
-    
+
     $roles = ['admin' => 1, 'super_admin' => 2];
     $user_role = $_SESSION['admin_role'] ?? 'admin';
-    
+
     if ($roles[$user_role] < $roles[$required_role]) {
         die('Access denied. Insufficient permissions.');
     }

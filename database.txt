@@ -22,11 +22,16 @@ ALTER TABLE videos ADD KEY agent_id (agent_id);
 ALTER TABLE videos DROP FOREIGN KEY videos_ibfk_1;
 ALTER TABLE videos ADD CONSTRAINT videos_ibfk_1 FOREIGN KEY (agent_id) REFERENCES users (id) ON DELETE CASCADE;
 
+-- Alter social_media table
+ALTER TABLE social_media CHANGE user_id agent_id INT(11) NOT NULL;
+
 -- Alter users table
 ALTER TABLE users MODIFY COLUMN agent_id VARCHAR(50) DEFAULT NULL;
 ALTER TABLE users ADD COLUMN company_logo VARCHAR(255) DEFAULT NULL AFTER position;
 ALTER TABLE users ADD COLUMN location TEXT DEFAULT NULL AFTER company_logo;
 ALTER TABLE users ADD COLUMN referral_code VARCHAR(50) DEFAULT NULL AFTER location;
+ALTER TABLE users DROP COLUMN mobile2;
+ALTER TABLE users DROP COLUMN banner;
 ALTER TABLE users ADD COLUMN referred_by INT(11) DEFAULT NULL AFTER referral_code;
 ALTER TABLE users ADD COLUMN referral_count INT(11) DEFAULT 0 AFTER referred_by;
 ALTER TABLE users ADD KEY referred_by (referred_by);
