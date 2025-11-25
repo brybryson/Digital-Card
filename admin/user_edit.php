@@ -8,7 +8,12 @@ if (!isLoggedIn()) {
 
 $db = getDB();
 $user_id = $_GET['id'] ?? null;
-$is_edit = !empty($user_id);
+
+if (empty($user_id)) {
+    redirect('users.php');
+}
+
+$is_edit = true;
 
 $user = $bio = $social = $banks = $videos = $links = $settings = [];
 $upload_errors = [];
@@ -190,7 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $is_edit ? 'Edit' : 'Add'; ?> User - BumpCard Admin</title>
+    <title>Edit User - BumpCard Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -204,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Header -->
         <div class="mb-8 flex items-center justify-between">
             <div>
-                <h1 class="text-3xl font-bold text-gray-800"><?php echo $is_edit ? 'Edit' : 'Add New'; ?> User</h1>
+                <h1 class="text-3xl font-bold text-gray-800">Edit User</h1>
                 <p class="text-gray-600 mt-1">Manage user information and digital card content</p>
             </div>
             <a href="users.php" class="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
@@ -400,7 +405,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     Cancel
                 </a>
                 <button type="submit" class="px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-semibold rounded-lg hover:from-orange-600 hover:to-yellow-600 transition">
-                    <?php echo $is_edit ? 'Update User' : 'Create User'; ?>
+                    Update User
                 </button>
             </div>
         </form>
