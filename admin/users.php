@@ -27,7 +27,7 @@ $sql = "SELECT u.*,
         WHERE 1=1";
 
 if (!empty($search)) {
-    $sql .= " AND (u.firstname LIKE ? OR u.lastname LIKE ? OR u.email LIKE ? OR u.company LIKE ?)";
+    $sql .= " AND (u.firstname LIKE ? OR u.lastname LIKE ? OR u.middlename LIKE ? OR u.email LIKE ? OR u.company LIKE ? OR u.mobile LIKE ?)";
 }
 
 if ($filter !== 'all') {
@@ -40,10 +40,10 @@ $stmt = $db->prepare($sql);
 
 if (!empty($search) && $filter !== 'all') {
     $searchTerm = "%$search%";
-    $stmt->execute([$searchTerm, $searchTerm, $searchTerm, $searchTerm, $filter]);
+    $stmt->execute([$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $filter]);
 } elseif (!empty($search)) {
     $searchTerm = "%$search%";
-    $stmt->execute([$searchTerm, $searchTerm, $searchTerm, $searchTerm]);
+    $stmt->execute([$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
 } elseif ($filter !== 'all') {
     $stmt->execute([$filter]);
 } else {
@@ -82,17 +82,18 @@ $users = $stmt->fetchAll();
 
         <!-- Search and Filter -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-            <form method="GET" class="flex gap-4">
+            <form method="GET" id="filterForm" class="flex gap-4">
                 <div class="flex-1">
-                    <input 
-                        type="text" 
-                        name="search" 
-                        placeholder="Search by name, email, or company..." 
+                    <input
+                        type="text"
+                        name="search"
+                        placeholder="Search by name, email, or company..."
                         value="<?php echo htmlspecialchars($search); ?>"
+                        onblur="submitForm()"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                     >
                 </div>
-                <select name="filter" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <select name="filter" onchange="submitForm()" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                     <option value="all" <?php echo $filter === 'all' ? 'selected' : ''; ?>>All Templates</option>
                     <option value="design-1" <?php echo $filter === 'design-1' ? 'selected' : ''; ?>>Design 1</option>
                     <option value="design-2" <?php echo $filter === 'design-2' ? 'selected' : ''; ?>>Design 2</option>
@@ -100,11 +101,6 @@ $users = $stmt->fetchAll();
                 <button type="submit" class="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition">
                     Search
                 </button>
-                <?php if (!empty($search) || $filter !== 'all'): ?>
-                <a href="users.php" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
-                    Clear
-                </a>
-                <?php endif; ?>
             </form>
         </div>
 
@@ -114,19 +110,20 @@ $users = $stmt->fetchAll();
                 <table class="w-full">
                     <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">User</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Company</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Contact</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Template</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Contacts</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">User</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Company</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Contact</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Template</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Referrals</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Contacts</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         <?php foreach ($users as $user): ?>
                         <tr class="hover:bg-gray-50 transition">
-                            <td class="px-6 py-4">
+                            <td class="px-4 py-3">
                                 <div class="flex items-center space-x-3">
                                     <?php if (!empty($user['photo'])): ?>
                                     <img src="<?php echo htmlspecialchars($user['photo']); ?>" alt="Profile Photo" class="w-10 h-10 rounded-full object-cover border border-gray-200">
@@ -139,44 +136,54 @@ $users = $stmt->fetchAll();
                                     <?php endif; ?>
                                     <div>
                                         <p class="text-sm font-semibold text-gray-800">
-                                            <?php echo htmlspecialchars($user['firstname'] . ' ' . $user['lastname']); ?>
+                                            <?php
+                                            $fullName = $user['firstname'];
+                                            if (!empty($user['middlename'])) {
+                                                $fullName .= ' ' . substr($user['middlename'], 0, 1) . '.';
+                                            }
+                                            $fullName .= ' ' . $user['lastname'];
+                                            echo htmlspecialchars($fullName);
+                                            ?>
                                         </p>
                                         <p class="text-xs text-gray-500"><?php echo htmlspecialchars($user['email']); ?></p>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-4 py-3">
                                 <p class="text-sm text-gray-800"><?php echo htmlspecialchars($user['company']); ?></p>
                                 <p class="text-xs text-gray-500"><?php echo htmlspecialchars($user['position']); ?></p>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-4 py-3">
                                 <p class="text-sm text-gray-800"><?php echo htmlspecialchars($user['mobile']); ?></p>
                             </td>
-                            <td class="px-6 py-4">
-                                <span class="px-3 py-1 text-xs font-medium rounded-full <?php echo $user['design_template'] === 'design-1' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'; ?>">
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap <?php echo $user['design_template'] === 'design-1' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'; ?>">
                                     <?php echo $user['design_template']; ?>
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-4 py-3">
+                                <span class="text-sm font-semibold text-gray-800"><?php echo $user['referral_count']; ?></span>
+                            </td>
+                            <td class="px-4 py-3">
                                 <span class="text-sm font-semibold text-gray-800"><?php echo $user['total_contacts']; ?></span>
                             </td>
-                            <td class="px-6 py-4">
-                                <span class="px-3 py-1 text-xs font-medium rounded-full <?php echo $user['status'] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'; ?>">
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full <?php echo $user['status'] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'; ?>">
                                     <?php echo $user['status'] ? 'Active' : 'Inactive'; ?>
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-4 py-3">
                                 <div class="flex items-center justify-center space-x-2">
                                     <a href="user_edit.php?id=<?php echo $user['id']; ?>" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                         </svg>
                                     </a>
-                                    <a href="?toggle_status=<?php echo $user['id']; ?>" class="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition" title="Toggle Status" onclick="return confirm('Toggle user status?')">
+                                    <button type="button" onclick="openToggleModal(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['firstname'] . ' ' . $user['lastname']); ?>', <?php echo $user['status'] ? 'true' : 'false'; ?>)" class="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition" title="Toggle Status">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                                         </svg>
-                                    </a>
+                                    </button>
                                     <a href="../preview.php?id=<?php echo $user['id']; ?>" target="_blank" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition" title="Preview Card">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -187,10 +194,10 @@ $users = $stmt->fetchAll();
                             </td>
                         </tr>
                         <?php endforeach; ?>
-                        
+
                         <?php if (empty($users)): ?>
                         <tr>
-                            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                            <td colspan="8" class="px-4 py-12 text-center text-gray-500">
                                 No users found. Try adjusting your search or filter.
                             </td>
                         </tr>
@@ -200,5 +207,43 @@ $users = $stmt->fetchAll();
             </div>
         </div>
     </div>
+
+    <!-- Toggle Status Modal -->
+    <div id="toggleModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg max-w-md w-full mx-4">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Toggle User Status</h3>
+                <p class="text-gray-600 mb-4">
+                    Are you sure you want to change the status of <span id="toggleUserName" class="font-semibold"></span> from <span id="currentStatus" class="font-semibold"></span> to <span id="newStatus" class="font-semibold"></span>?
+                </p>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeToggleModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Cancel</button>
+                    <form method="GET" style="display: inline;">
+                        <input type="hidden" name="toggle_status" id="toggleUserId">
+                        <button type="submit" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition">Confirm</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function submitForm() {
+            document.getElementById('filterForm').submit();
+        }
+
+        function openToggleModal(userId, userName, currentStatus) {
+            document.getElementById('toggleUserId').value = userId;
+            document.getElementById('toggleUserName').textContent = userName;
+            document.getElementById('currentStatus').textContent = currentStatus ? 'Active' : 'Inactive';
+            document.getElementById('newStatus').textContent = currentStatus ? 'Inactive' : 'Active';
+            document.getElementById('toggleModal').classList.remove('hidden');
+        }
+
+        function closeToggleModal() {
+            document.getElementById('toggleModal').classList.add('hidden');
+        }
+    </script>
+
 </body>
 </html>
