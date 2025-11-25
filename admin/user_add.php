@@ -14,110 +14,154 @@ $upload_errors = [];
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        $db->beginTransaction();
-        
-        // Handle photo upload
-        $photo_path = null;
-        if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-            $upload = uploadFile($_FILES['photo']);
-            if ($upload && isset($upload['success']) && $upload['success']) {
-                $photo_path = $upload['url'];
-            } else {
-                $upload_errors[] = 'Photo upload failed: ' . ($upload['error'] ?? 'Unknown error');
-            }
-        }
+    $valid = true;
+    $error = '';
 
+    // Validate mobile numbers
+    if (!preg_match('/^09\d{9}$/', $_POST['mobile'])) {
+        $valid = false;
+        $error = "Primary mobile must be 11 digits starting with 09";
+    }
+    if (!empty($_POST['mobile1']) && !preg_match('/^09\d{9}$/', $_POST['mobile1'])) {
+        $valid = false;
+        $error = "Secondary mobile must be 11 digits starting with 09";
+    }
+    // Validate required fields
+    if (empty(trim($_POST['firstname']))) {
+        $valid = false;
+        $error = "First name is required";
+    } elseif (empty(trim($_POST['lastname']))) {
+        $valid = false;
+        $error = "Last name is required";
+    } elseif (empty(trim($_POST['middlename']))) {
+        $valid = false;
+        $error = "Middle name is required";
+    } elseif (empty($_POST['design_template'])) {
+        $valid = false;
+        $error = "Design template is required";
+    }
 
-        // Handle company logo upload
-        $company_logo_path = null;
-        if (isset($_FILES['company_logo']) && $_FILES['company_logo']['error'] === UPLOAD_ERR_OK) {
-            $upload = uploadFile($_FILES['company_logo']);
-            if ($upload && isset($upload['success']) && $upload['success']) {
-                $company_logo_path = $upload['url'];
-            } else {
-                $upload_errors[] = 'Company logo upload failed: ' . ($upload['error'] ?? 'Unknown error');
-            }
-        }
+    // Validate mobile numbers
+    if (!preg_match('/^09\d{9}$/', $_POST['mobile'])) {
+        $valid = false;
+        $error = "Primary mobile must be 11 digits starting with 09";
+    }
+    if (!empty($_POST['mobile1']) && !preg_match('/^09\d{9}$/', $_POST['mobile1'])) {
+        $valid = false;
+        $error = "Secondary mobile must be 11 digits starting with 09";
+    }
+    // Validate email
+    if (!preg_match('/@.*\.com$/', $_POST['email'])) {
+        $valid = false;
+        $error = "Email must contain @ and end with .com";
+    }
 
-        // Generate agent_id and referral_code
-        $agent_id = generateRandomString(8);
-        $referral_code = generateRandomString(6);
+    if ($valid) {
+        try {
+            $db->beginTransaction();
 
-        $stmt = $db->prepare("
-            INSERT INTO users (firstname, lastname, company, position, company_logo, location, mobile, mobile1, email, photo, design_template, agent_id, referral_code)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        $stmt->execute([
-            $_POST['firstname'], $_POST['lastname'], $_POST['company'], $_POST['position'],
-            $company_logo_path, $_POST['location'], $_POST['mobile'], $_POST['mobile1'],
-            $_POST['email'], $photo_path, $_POST['design_template'], $agent_id, $referral_code
-        ]);
-        $user_id = $db->lastInsertId();
-        
-        // Save bio
-        $stmt = $db->prepare("INSERT INTO user_bio (user_id, title, description) VALUES (?, ?, ?) 
-            ON DUPLICATE KEY UPDATE title = VALUES(title), description = VALUES(description)");
-        $stmt->execute([$user_id, $_POST['bio_title'], $_POST['bio_description']]);
-        
-        // Save social media
-        $social_titles = [];
-        $logo_map = [
-            'FB' => '/Digital-Card/images/social-media-logo/FACEBOOK-LOGO.png',
-            'IG' => '/Digital-Card/images/social-media-logo/INSTAGRAM-LOGO.png',
-            'GH' => '/Digital-Card/images/social-media-logo/GITHUB-LOGO.png',
-            'LI' => '/Digital-Card/images/social-media-logo/LINKEDIN-LOGO.png',
-            'TG' => '/Digital-Card/images/social-media-logo/TELEGRAM-LOGO.png',
-            'TT' => '/Digital-Card/images/social-media-logo/TIKTOK-LOGO.png',
-            'TW' => '/Digital-Card/images/social-media-logo/TWITTER-LOGO.png',
-            'VB' => '/Digital-Card/images/social-media-logo/VIBER-LOGO.png',
-            'YT' => '/Digital-Card/images/social-media-logo/YOUTUBE-LOGO.png',
-        ];
-        foreach ($_POST as $key => $value) {
-            if (strpos($key, 'social_') === 0) {
-                if (strpos($key, '_title') !== false) {
-                    $plat = strtoupper(substr($key, 7, -6)); // social_xx_title -> xx
-                    $social_titles[$plat] = $value;
-                } elseif (!empty($value)) {
-                    $platform = strtoupper(substr($key, 7));
-                    $title = $social_titles[$platform] ?? null;
-                    // Determine custom_logo
-                    $custom_logo_path = null;
-                    if (isset($logo_map[$platform])) {
-                        $custom_logo_path = $logo_map[$platform];
-                    } elseif (!isset($logo_map[$platform])) {
-                        $custom_logo_path = '../images/verified.png';
-                    }
-                    // Check for custom logo
-                    $custom_logo_key = 'social_' . strtolower($platform) . '_logo';
-                    if (isset($_POST[$custom_logo_key])) {
-                        $custom_logo_path = $_POST[$custom_logo_key];
-                    }
-                    $stmt = $db->prepare("INSERT INTO social_media (agent_id, platform, link, title, custom_logo, status)
-                        VALUES (?, ?, ?, ?, ?, 1) ON DUPLICATE KEY UPDATE link = VALUES(link), title = VALUES(title), custom_logo = VALUES(custom_logo)");
-                    $stmt->execute([$user_id, $platform, $value, $title, $custom_logo_path]);
+            // Handle photo upload
+            $photo_path = null;
+            if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+                $upload = uploadFile($_FILES['photo']);
+                if ($upload && isset($upload['success']) && $upload['success']) {
+                    $photo_path = $upload['url'];
+                } else {
+                    $upload_errors[] = 'Photo upload failed: ' . ($upload['error'] ?? 'Unknown error');
                 }
             }
-        }
-        
-        // Handle social media deletions
-        foreach ($_POST as $key => $value) {
-            if (strpos($key, 'delete_social_') === 0 && $value == '1') {
-                $plat = strtoupper(substr($key, 14)); // delete_social_xx -> xx
-                $stmt = $db->prepare("DELETE FROM social_media WHERE agent_id = ? AND platform = ?");
-                $stmt->execute([$user_id, $plat]);
+
+
+            // Handle company logo upload
+            $company_logo_path = null;
+            if (isset($_FILES['company_logo']) && $_FILES['company_logo']['error'] === UPLOAD_ERR_OK) {
+                $upload = uploadFile($_FILES['company_logo']);
+                if ($upload && isset($upload['success']) && $upload['success']) {
+                    $company_logo_path = $upload['url'];
+                } else {
+                    $upload_errors[] = 'Company logo upload failed: ' . ($upload['error'] ?? 'Unknown error');
+                }
             }
+
+            // Generate agent_id and referral_code
+            $agent_id = generateRandomString(8);
+            $referral_code = generateRandomString(6);
+
+            $stmt = $db->prepare("
+                INSERT INTO users (firstname, lastname, middlename, company, position, company_logo, location, mobile, mobile1, email, photo, design_template, agent_id, referral_code)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([
+                $_POST['firstname'], $_POST['lastname'], $_POST['middlename'], $_POST['company'], $_POST['position'],
+                $company_logo_path, $_POST['location'], $_POST['mobile'], $_POST['mobile1'],
+                $_POST['email'], $photo_path, $_POST['design_template'], $agent_id, $referral_code
+            ]);
+            $user_id = $db->lastInsertId();
+
+            // Save bio
+            $stmt = $db->prepare("INSERT INTO user_bio (user_id, title, description) VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE title = VALUES(title), description = VALUES(description)");
+            $stmt->execute([$user_id, $_POST['bio_title'], $_POST['bio_description']]);
+
+            // Save social media
+            $social_titles = [];
+            $logo_map = [
+                'FB' => '/Digital-Card/images/social-media-logo/FACEBOOK-LOGO.png',
+                'IG' => '/Digital-Card/images/social-media-logo/INSTAGRAM-LOGO.png',
+                'GH' => '/Digital-Card/images/social-media-logo/GITHUB-LOGO.png',
+                'LI' => '/Digital-Card/images/social-media-logo/LINKEDIN-LOGO.png',
+                'TG' => '/Digital-Card/images/social-media-logo/TELEGRAM-LOGO.png',
+                'TT' => '/Digital-Card/images/social-media-logo/TIKTOK-LOGO.png',
+                'TW' => '/Digital-Card/images/social-media-logo/TWITTER-LOGO.png',
+                'VB' => '/Digital-Card/images/social-media-logo/VIBER-LOGO.png',
+                'YT' => '/Digital-Card/images/social-media-logo/YOUTUBE-LOGO.png',
+            ];
+            foreach ($_POST as $key => $value) {
+                if (strpos($key, 'social_') === 0) {
+                    if (strpos($key, '_title') !== false) {
+                        $plat = strtoupper(substr($key, 7, -6)); // social_xx_title -> xx
+                        $social_titles[$plat] = $value;
+                    } elseif (!empty($value)) {
+                        $platform = strtoupper(substr($key, 7));
+                        $title = $social_titles[$platform] ?? null;
+                        // Determine custom_logo
+                        $custom_logo_path = null;
+                        if (isset($logo_map[$platform])) {
+                            $custom_logo_path = $logo_map[$platform];
+                        } elseif (!isset($logo_map[$platform])) {
+                            $custom_logo_path = '../images/verified.png';
+                        }
+                        // Check for custom logo
+                        $custom_logo_key = 'social_' . strtolower($platform) . '_logo';
+                        if (isset($_POST[$custom_logo_key])) {
+                            $custom_logo_path = $_POST[$custom_logo_key];
+                        }
+                        $stmt = $db->prepare("INSERT INTO social_media (agent_id, platform, link, title, custom_logo, status)
+                            VALUES (?, ?, ?, ?, ?, 1) ON DUPLICATE KEY UPDATE link = VALUES(link), title = VALUES(title), custom_logo = VALUES(custom_logo)");
+                        $stmt->execute([$user_id, $platform, $value, $title, $custom_logo_path]);
+                    }
+                }
+            }
+
+            // Handle social media deletions
+            foreach ($_POST as $key => $value) {
+                if (strpos($key, 'delete_social_') === 0 && $value == '1') {
+                    $plat = strtoupper(substr($key, 14)); // delete_social_xx -> xx
+                    $stmt = $db->prepare("DELETE FROM social_media WHERE agent_id = ? AND platform = ?");
+                    $stmt->execute([$user_id, $plat]);
+                }
+            }
+
+            $db->commit();
+
+            logActivity($_SESSION['admin_id'], $user_id, 'create_user',
+                'User created');
+
+            redirect('users.php');
+        } catch(Exception $e) {
+            $db->rollBack();
+            $error = "Error saving user: " . $e->getMessage();
         }
-
-        $db->commit();
-
-        logActivity($_SESSION['admin_id'], $user_id, 'create_user',
-            'User created');
-
-        redirect('users.php');
-    } catch(Exception $e) {
-        $db->rollBack();
-        $error = "Error saving user: " . $e->getMessage();
     }
 }
 ?>
@@ -173,17 +217,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">First Name *</label>
-                        <input type="text" name="firstname" value="" 
+                        <input type="text" name="firstname" value=""
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Middle Name *</label>
+                        <input type="text" name="middlename" value=""
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Last Name *</label>
-                        <input type="text" name="lastname" value="" 
+                        <input type="text" name="lastname" value=""
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Company</label>
-                        <input type="text" name="company" value="" 
+                        <input type="text" name="company" value=""
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                     </div>
                     <div>
@@ -221,17 +270,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Primary Mobile *</label>
-                        <input type="tel" name="mobile" value="" 
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+                        <input type="tel" name="mobile" value="" onfocus="autoFill09(this)" oninput="validateMobile(this)" onblur="checkMobile(this)"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required maxlength="11" placeholder="09XXXXXXXXX">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Secondary Mobile</label>
-                        <input type="tel" name="mobile1" value="" 
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        <input type="tel" name="mobile1" value="" onfocus="autoFill09(this)" oninput="validateMobile(this)" onblur="checkMobile(this)"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" maxlength="11" placeholder="09XXXXXXXXX">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
-                        <input type="email" name="email" value="" 
+                        <input type="email" name="email" value="" onblur="validateEmail(this)"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required>
                     </div>
                 </div>
@@ -271,7 +320,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Design Template</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <label class="relative cursor-pointer">
-                        <input type="radio" name="design_template" value="design-1" checked
+                        <input type="radio" name="design_template" value="design-1" checked required
                             class="peer sr-only">
                         <div class="border-2 border-gray-300 rounded-lg p-4 peer-checked:border-orange-500 peer-checked:bg-orange-50 transition cursor-pointer">
                             <div class="mb-2">
@@ -464,24 +513,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             div.className = 'flex items-center space-x-4 p-4 bg-gray-50 rounded-lg';
             const standardPlatforms = ['FB', 'IG', 'GH', 'LI', 'TG', 'TT', 'TW', 'VB', 'YT'];
             const isCustom = !standardPlatforms.includes(platform);
-            let html = `
-                <img src="${logo}" alt="${name}" class="w-8 h-8">
-                <input type="hidden" name="social_${platform.toLowerCase()}_title" value="${name}">
-                <input type="url" name="social_${platform.toLowerCase()}" value="${url}"
-                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="https://...">
-                <button type="button" onclick="editSocialMedia(this)" class="text-blue-600 hover:text-blue-700 mr-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                </button>
-                <button type="button" onclick="removeSocialMedia(this, '${platform}')" class="text-red-600 hover:text-red-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                    </svg>
-                </button>
-            `;
+            let html = '<img src="' + logo + '" alt="' + name + '" class="w-8 h-8">' +
+                '<input type="hidden" name="social_' + platform.toLowerCase() + '_title" value="' + name + '">' +
+                '<input type="url" name="social_' + platform.toLowerCase() + '" value="' + url + '" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="https://...">' +
+                '<button type="button" onclick="editSocialMedia(this)" class="text-blue-600 hover:text-blue-700 mr-2">' +
+                '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>' +
+                '</svg>' +
+                '</button>' +
+                '<button type="button" onclick="removeSocialMedia(this, \'' + platform + '\')" class="text-red-600 hover:text-red-700">' +
+                '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>' +
+                '</svg>' +
+                '</button>';
             if (customLogo) {
-                html += `<input type="hidden" name="social_${platform.toLowerCase()}_logo" value="${customLogo}">`;
+                html += '<input type="hidden" name="social_' + platform.toLowerCase() + '_logo" value="' + customLogo + '">';
             }
             div.innerHTML = html;
             container.appendChild(div);
@@ -519,6 +565,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 preview.src = '';
                 preview.classList.add('hidden');
+            }
+        }
+
+        function autoFill09(input) {
+            if (input.value === '') {
+                input.value = '09';
+            }
+        }
+
+        function validateMobile(input) {
+            // Remove non-numeric characters
+            input.value = input.value.replace(/[^0-9]/g, '');
+            // Ensure starts with 09
+            if (input.value.length >= 2 && input.value.substring(0, 2) !== '09') {
+                input.value = '09' + input.value.replace(/^09/, '');
+            }
+            // Limit to 11 digits
+            if (input.value.length > 11) {
+                input.value = input.value.substring(0, 11);
+            }
+        }
+
+        function checkMobile(input) {
+            const value = input.value;
+            if (value.length !== 11 || !value.startsWith('09')) {
+                alert('Mobile number must be 11 digits and start with 09');
+                input.focus();
+            }
+        }
+
+        function validateEmail(input) {
+            const value = input.value;
+            if (!value.includes('@') || !value.endsWith('.com')) {
+                alert('Email must contain @ and end with .com');
+                input.focus();
             }
         }
     </script>

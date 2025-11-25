@@ -90,13 +90,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($is_edit) {
             $stmt = $db->prepare("
                 UPDATE users SET
-                    firstname = ?, lastname = ?, company = ?, position = ?,
+                    firstname = ?, lastname = ?, middlename = ?, company = ?, position = ?,
                     company_logo = ?, location = ?, mobile = ?, mobile1 = ?, email = ?,
                     photo = ?, design_template = ?
                 WHERE id = ?
             ");
             $stmt->execute([
-                $_POST['firstname'], $_POST['lastname'], $_POST['company'], $_POST['position'],
+                $_POST['firstname'], $_POST['lastname'], $_POST['middlename'], $_POST['company'], $_POST['position'],
                 $company_logo_path, $_POST['location'], $_POST['mobile'], $_POST['mobile1'],
                 $_POST['email'], $photo_path, $_POST['design_template'], $user_id
             ]);
@@ -242,17 +242,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">First Name *</label>
-                        <input type="text" name="firstname" value="<?php echo htmlspecialchars($user['firstname'] ?? ''); ?>" 
+                        <input type="text" name="firstname" value="<?php echo htmlspecialchars($user['firstname'] ?? ''); ?>"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required>
                     </div>
                     <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Middle Name</label>
+                        <input type="text" name="middlename" value="<?php echo htmlspecialchars($user['middlename'] ?? ''); ?>"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    </div>
+                    <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Last Name *</label>
-                        <input type="text" name="lastname" value="<?php echo htmlspecialchars($user['lastname'] ?? ''); ?>" 
+                        <input type="text" name="lastname" value="<?php echo htmlspecialchars($user['lastname'] ?? ''); ?>"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Company</label>
-                        <input type="text" name="company" value="<?php echo htmlspecialchars($user['company'] ?? ''); ?>" 
+                        <input type="text" name="company" value="<?php echo htmlspecialchars($user['company'] ?? ''); ?>"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                     </div>
                     <div>
