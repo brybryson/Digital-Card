@@ -48,7 +48,7 @@ $contacts = $stmt->fetchAll();
     <?php include 'includes/sidebar.php'; ?>
 
     <!-- Main Content -->
-    <div class="ml-64 p-8">
+    <div id="main-content" class="ml-64 p-8">
         <!-- Header -->
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-800">Contact Submissions</h1>

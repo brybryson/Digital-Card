@@ -200,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="bg-gray-50">
     <?php include 'includes/sidebar.php'; ?>
 
-    <div class="ml-64 p-8">
+    <div id="main-content" class="ml-64 p-8">
         <!-- Header -->
         <div class="mb-8 flex items-center justify-between">
             <div>
