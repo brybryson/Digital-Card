@@ -90,14 +90,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($is_edit) {
             $stmt = $db->prepare("
                 UPDATE users SET
-                    firstname = ?, lastname = ?, middlename = ?, company = ?, position = ?,
-                    company_logo = ?, location = ?, mobile = ?, mobile1 = ?, email = ?,
+                    firstname = ?, lastname = ?, middlename = ?, home_address = ?, company = ?, position = ?,
+                    company_logo = ?, work_location = ?, mobile = ?, mobile1 = ?, email = ?,
                     photo = ?, design_template = ?
                 WHERE id = ?
             ");
             $stmt->execute([
-                $_POST['firstname'], $_POST['lastname'], $_POST['middlename'], $_POST['company'], $_POST['position'],
-                $company_logo_path, $_POST['location'], $_POST['mobile'], $_POST['mobile1'],
+                $_POST['firstname'], $_POST['lastname'], $_POST['middlename'], $_POST['home_address'], $_POST['company'], $_POST['position'],
+                $company_logo_path, $_POST['work_location'], $_POST['mobile'], $_POST['mobile1'],
                 $_POST['email'], $photo_path, $_POST['design_template'], $user_id
             ]);
         } else {
@@ -178,6 +178,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // Save bank accounts
+        $bank_data = [];
+        $logo_map = [
+            'GCash' => '/Digital-Card/images/banks-logo/GCASH-LOGO.png',
+            'Maya' => '/Digital-Card/images/banks-logo/MAYA-LOGO.png',
+            'Paypal' => '/Digital-Card/images/banks-logo/PAYPAL-LOGO.png',
+            'GoTyme' => '/Digital-Card/images/banks-logo/GOTYME-LOGO.png',
+        ];
+        foreach ($_POST as $key => $value) {
+            if (strpos($key, 'bank_') === 0 && strpos($key, '_name') !== false && strpos($key, '_account_name') === false) {
+                $bank_key = substr($key, 5, -5); // bank_xx_name -> xx
+                $bank_data[$bank_key]['name'] = $value;
+            } elseif (strpos($key, 'bank_') === 0 && strpos($key, '_account_name') !== false) {
+                $bank_key = substr($key, 5, -13); // bank_xx_account_name -> xx
+                $bank_data[$bank_key]['account_name'] = $value;
+            } elseif (strpos($key, 'bank_') === 0 && strpos($key, '_account_no') !== false) {
+                $bank_key = substr($key, 5, -11); // bank_xx_account_no -> xx
+                $bank_data[$bank_key]['account_no'] = $value;
+            } elseif (strpos($key, 'bank_') === 0 && strpos($key, '_account_email') !== false) {
+                $bank_key = substr($key, 5, -14); // bank_xx_account_email -> xx
+                $bank_data[$bank_key]['account_email'] = $value;
+            } elseif (strpos($key, 'bank_') === 0 && strpos($key, '_logo') !== false) {
+                $bank_key = substr($key, 5, -5); // bank_xx_logo -> xx
+                $bank_data[$bank_key]['logo'] = $value;
+            }
+        }
+        foreach ($bank_data as $bank_key => $data) {
+            $bank_name = $data['name'] ?? '';
+            $account_name = $data['account_name'] ?? '';
+            $account_no = $data['account_no'] ?? '';
+            $account_email = $data['account_email'] ?? '';
+            $logo_path = $data['logo'] ?? $logo_map[$bank_name] ?? '';
+
+            if (!empty($bank_name) && !empty($account_name) && !empty($account_no) && !empty($logo_path)) {
+                $stmt = $db->prepare("INSERT INTO bank_accounts (agent_id, bank_name, account_no, account_type, account_email, logo_path)
+                    VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE account_no = VALUES(account_no), account_type = VALUES(account_type), account_email = VALUES(account_email), logo_path = VALUES(logo_path)");
+                $stmt->execute([$user_id, $bank_name, $account_no, $account_name, $account_email, $logo_path]);
+            }
+        }
+
+        // Handle bank account deletions
+        foreach ($_POST as $key => $value) {
+            if (strpos($key, 'delete_bank_') === 0 && $value == '1') {
+                $bank_id = substr($key, 12); // delete_bank_xx -> xx
+                $stmt = $db->prepare("DELETE FROM bank_accounts WHERE id = ? AND agent_id = ?");
+                $stmt->execute([$bank_id, $user_id]);
+            }
+        }
+
         $db->commit();
 
         logActivity($_SESSION['admin_id'], $user_id, $is_edit ? 'update_user' : 'create_user',
@@ -255,6 +304,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="text" name="lastname" value="<?php echo htmlspecialchars($user['lastname'] ?? ''); ?>"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required>
                     </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Home Address</label>
+                        <textarea name="home_address" rows="2"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"><?php echo htmlspecialchars($user['home_address'] ?? ''); ?></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Work Information -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Work Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Company</label>
                         <input type="text" name="company" value="<?php echo htmlspecialchars($user['company'] ?? ''); ?>"
@@ -262,13 +323,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Position</label>
-                        <input type="text" name="position" value="<?php echo htmlspecialchars($user['position'] ?? ''); ?>" 
+                        <input type="text" name="position" value="<?php echo htmlspecialchars($user['position'] ?? ''); ?>"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Address</label>
-                        <textarea name="location" rows="2"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"><?php echo htmlspecialchars($user['location'] ?? ''); ?></textarea>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Work Location</label>
+                        <textarea name="work_location" rows="2"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"><?php echo htmlspecialchars($user['work_location'] ?? ''); ?></textarea>
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Profile Photo</label>
@@ -409,7 +470,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a href="users.php" class="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
                     Cancel
                 </a>
-                <button type="submit" class="px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-semibold rounded-lg hover:from-orange-600 hover:to-yellow-600 transition">
+                <button type="button" onclick="confirmSave()" class="px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-semibold rounded-lg hover:from-orange-600 hover:to-yellow-600 transition">
                     Update User
                 </button>
             </div>
@@ -422,17 +483,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold text-gray-800">Bank Accounts</h2>
-                    <button onclick="alert('Feature coming soon')" class="text-sm text-orange-600 hover:text-orange-700">+ Add Bank</button>
+                    <button type="button" onclick="openBankModal()" class="text-sm text-orange-600 hover:text-orange-700">+ Add Bank</button>
                 </div>
-                <div class="space-y-2">
+                <div id="bankContainer" class="space-y-2">
                     <?php foreach ($banks as $bank): ?>
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                            <p class="text-sm font-semibold text-gray-800"><?php echo htmlspecialchars($bank['bank_name']); ?></p>
-                            <p class="text-xs text-gray-600"><?php echo htmlspecialchars($bank['account_no']); ?></p>
+                    <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                        <img src="<?php echo htmlspecialchars($bank['logo_path']); ?>" alt="<?php echo htmlspecialchars($bank['bank_name']); ?>" class="w-8 h-8">
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-gray-800"><?php echo htmlspecialchars($bank['bank_name']); ?> - <?php echo htmlspecialchars($bank['account_type']); ?></p>
+                            <p class="text-xs text-gray-600">
+                                <?php
+                                $display = htmlspecialchars($bank['account_no']);
+                                if (!empty($bank['account_email'])) {
+                                    $display .= ' | ' . htmlspecialchars($bank['account_email']);
+                                }
+                                echo $display;
+                                ?>
+                            </p>
                         </div>
-                        <button class="text-red-600 hover:text-red-700">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <input type="hidden" name="bank_<?php echo strtolower(str_replace(' ', '', $bank['bank_name'])); ?>_name" value="<?php echo htmlspecialchars($bank['bank_name']); ?>">
+                        <input type="hidden" name="bank_<?php echo strtolower(str_replace(' ', '', $bank['bank_name'])); ?>_account_name" value="<?php echo htmlspecialchars($bank['account_type']); ?>">
+                        <input type="hidden" name="bank_<?php echo strtolower(str_replace(' ', '', $bank['bank_name'])); ?>_account_no" value="<?php echo htmlspecialchars($bank['account_no']); ?>">
+                        <input type="hidden" name="bank_<?php echo strtolower(str_replace(' ', '', $bank['bank_name'])); ?>_account_email" value="<?php echo htmlspecialchars($bank['account_email'] ?? ''); ?>">
+                        <input type="hidden" name="bank_<?php echo strtolower(str_replace(' ', '', $bank['bank_name'])); ?>_logo" value="<?php echo htmlspecialchars($bank['logo_path']); ?>">
+                        <button type="button" onclick="removeBank(this, <?php echo $bank['id']; ?>)" class="text-red-600 hover:text-red-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                             </svg>
                         </button>
@@ -553,6 +628,110 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="flex justify-end space-x-3 mt-6">
                     <button type="button" onclick="closeCustomSocialModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Cancel</button>
                     <button type="button" onclick="addCustomSocialMedia()" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Selection Modal -->
+    <div id="bankModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Add Bank Account</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <button type="button" onclick="selectBank('GCash', 'GCash', '/Digital-Card/images/banks-logo/GCASH-LOGO.png')" class="flex flex-col items-center p-4 border border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition">
+                        <img src="/Digital-Card/images/banks-logo/GCASH-LOGO.png" alt="GCash" class="w-12 h-12 mb-2">
+                        <span class="text-sm font-medium">GCash</span>
+                    </button>
+                    <button type="button" onclick="selectBank('Maya', 'Maya', '/Digital-Card/images/banks-logo/MAYA-LOGO.png')" class="flex flex-col items-center p-4 border border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition">
+                        <img src="/Digital-Card/images/banks-logo/MAYA-LOGO.png" alt="Maya" class="w-12 h-12 mb-2">
+                        <span class="text-sm font-medium">Maya</span>
+                    </button>
+                    <button type="button" onclick="selectBank('Paypal', 'Paypal', '/Digital-Card/images/banks-logo/PAYPAL-LOGO.png')" class="flex flex-col items-center p-4 border border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition">
+                        <img src="/Digital-Card/images/banks-logo/PAYPAL-LOGO.png" alt="Paypal" class="w-12 h-12 mb-2">
+                        <span class="text-sm font-medium">Paypal</span>
+                    </button>
+                    <button type="button" onclick="selectBank('GoTyme', 'GoTyme', '/Digital-Card/images/banks-logo/GOTYME-LOGO.png')" class="flex flex-col items-center p-4 border border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition">
+                        <img src="/Digital-Card/images/banks-logo/GOTYME-LOGO.png" alt="GoTyme" class="w-12 h-12 mb-2">
+                        <span class="text-sm font-medium">GoTyme</span>
+                    </button>
+                    <button type="button" onclick="openCustomBankModal()" class="flex flex-col items-center p-4 border border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition">
+                        <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mb-2">
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium">Others</span>
+                    </button>
+                </div>
+                <div class="flex justify-end mt-6">
+                    <button type="button" onclick="closeBankModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Details Modal -->
+    <div id="bankDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg max-w-md w-full mx-4">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Add Bank Account Details</h3>
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <img id="selectedBankLogo" src="" alt="Bank Logo" class="w-12 h-12">
+                        <span id="selectedBankName" class="text-lg font-medium"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Account Name *</label>
+                        <input type="text" id="bankAccountName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Account holder name" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Account Number *</label>
+                        <input type="text" id="bankAccountNo" onfocus="autoFill09Bank(this)" oninput="validateBankAccountNo(this)" onblur="checkBankAccountNo(this)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" maxlength="11" placeholder="09XXXXXXXXX" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Email (optional)</label>
+                        <input type="email" id="bankAccountEmail" onblur="validateBankEmail(this)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="email@example.com">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeBankDetailsModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Cancel</button>
+                    <button type="button" onclick="addBankDetails()" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Bank Modal -->
+    <div id="customBankModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg max-w-md w-full mx-4">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Add Custom Bank</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Bank Name *</label>
+                        <input type="text" id="customBankName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="e.g., BDO" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Account Name *</label>
+                        <input type="text" id="customBankAccountName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Account holder name" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Account Number *</label>
+                        <input type="text" id="customBankAccountNo" onfocus="autoFill09Bank(this)" oninput="validateBankAccountNo(this)" onblur="checkBankAccountNo(this)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" maxlength="11" placeholder="09XXXXXXXXX" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Email (optional)</label>
+                        <input type="email" id="customBankAccountEmail" onblur="validateBankEmail(this)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="email@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Logo *</label>
+                        <input type="file" id="customBankLogo" accept="image/*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeCustomBankModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Cancel</button>
+                    <button type="button" onclick="addCustomBank()" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">Add</button>
                 </div>
             </div>
         </div>
@@ -686,6 +865,206 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 preview.src = '';
                 preview.classList.add('hidden');
+            }
+        }
+
+        function openBankModal() {
+            document.getElementById('bankModal').classList.remove('hidden');
+        }
+
+        function closeBankModal() {
+            document.getElementById('bankModal').classList.add('hidden');
+        }
+
+        function selectBank(bankName, displayName, logo) {
+            document.getElementById('selectedBankName').textContent = displayName;
+            document.getElementById('selectedBankLogo').src = logo;
+            document.getElementById('bankDetailsModal').dataset.bankName = bankName;
+            document.getElementById('bankDetailsModal').dataset.displayName = displayName;
+            document.getElementById('bankDetailsModal').dataset.logo = logo;
+            closeBankModal();
+            document.getElementById('bankDetailsModal').classList.remove('hidden');
+        }
+
+        function openCustomBankModal() {
+            closeBankModal();
+            document.getElementById('customBankModal').classList.remove('hidden');
+        }
+
+        function closeBankDetailsModal() {
+            document.getElementById('bankDetailsModal').classList.add('hidden');
+        }
+
+        function closeCustomBankModal() {
+            document.getElementById('customBankModal').classList.add('hidden');
+        }
+
+        function addBankDetails() {
+            const modal = document.getElementById('bankDetailsModal');
+            const bankName = modal.dataset.bankName;
+            const displayName = modal.dataset.displayName;
+            const logo = modal.dataset.logo;
+            const accountName = document.getElementById('bankAccountName').value.trim();
+            const accountNo = document.getElementById('bankAccountNo').value.trim();
+            const accountEmail = document.getElementById('bankAccountEmail').value.trim();
+
+            if (!accountName || !accountNo) {
+                alert('Please fill in account name and account number');
+                return;
+            }
+
+            addBankField(bankName, displayName, logo, accountName, accountNo, accountEmail);
+
+            // Reset form
+            document.getElementById('bankAccountName').value = '';
+            document.getElementById('bankAccountNo').value = '';
+            document.getElementById('bankAccountEmail').value = '';
+            closeBankDetailsModal();
+        }
+
+        async function addCustomBank() {
+            const bankName = document.getElementById('customBankName').value.trim();
+            const accountName = document.getElementById('customBankAccountName').value.trim();
+            const accountNo = document.getElementById('customBankAccountNo').value.trim();
+            const accountEmail = document.getElementById('customBankAccountEmail').value.trim();
+            const logoFile = document.getElementById('customBankLogo').files[0];
+
+            if (!bankName || !accountName || !accountNo || !logoFile) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            // Upload logo
+            const formData = new FormData();
+            formData.append('file', logoFile);
+            formData.append('user_id', document.getElementById('current_user_id').value);
+            formData.append('bank_name', bankName);
+            formData.append('account_name', accountName);
+            formData.append('account_no', accountNo);
+            formData.append('account_email', accountEmail);
+
+            try {
+                const response = await fetch('../api/upload.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert('Logo upload failed: ' + result.error);
+                    return;
+                }
+
+                const logo = result.url;
+                addBankField(bankName, bankName, logo, accountName, accountNo, accountEmail, logo);
+
+                // Reset form
+                document.getElementById('customBankName').value = '';
+                document.getElementById('customBankAccountName').value = '';
+                document.getElementById('customBankAccountNo').value = '';
+                document.getElementById('customBankAccountEmail').value = '';
+                document.getElementById('customBankLogo').value = '';
+                closeCustomBankModal();
+            } catch (error) {
+                alert('Upload error: ' + error.message);
+            }
+        }
+
+        function addBankField(bankName, displayName, logo, accountName = '', accountNo = '', accountEmail = '', customLogo = null) {
+            const container = document.getElementById('bankContainer');
+            const div = document.createElement('div');
+            div.className = 'flex items-center space-x-4 p-4 bg-gray-50 rounded-lg';
+            const bankKey = bankName.toLowerCase().replace(/\s+/g, '');
+            let html = `
+                <img src="${logo}" alt="${displayName}" class="w-8 h-8">
+                <div class="flex-1">
+                    <p class="text-sm font-semibold text-gray-800">${displayName} - ${accountName}</p>
+                    <p class="text-xs text-gray-600">
+                        ${accountNo}${accountEmail ? ' | ' + accountEmail : ''}
+                    </p>
+                </div>
+                <input type="hidden" name="bank_${bankKey}_name" value="${displayName}">
+                <input type="hidden" name="bank_${bankKey}_account_name" value="${accountName}">
+                <input type="hidden" name="bank_${bankKey}_account_no" value="${accountNo}">
+                <input type="hidden" name="bank_${bankKey}_account_email" value="${accountEmail}">
+                <button type="button" onclick="removeBank(this, 'new')" class="text-red-600 hover:text-red-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </button>
+            `;
+            if (customLogo) {
+                html += `<input type="hidden" name="bank_${bankKey}_logo" value="${customLogo}">`;
+            } else {
+                html += `<input type="hidden" name="bank_${bankKey}_logo" value="${logo}">`;
+            }
+            div.innerHTML = html;
+            container.appendChild(div);
+        }
+
+        function removeBank(button, bankId) {
+            if (confirm('Are you sure you want to remove this bank account?')) {
+                if (bankId !== 'new') {
+                    // Add hidden input to mark for deletion
+                    const form = document.querySelector('form');
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'delete_bank_' + bankId;
+                    hidden.value = '1';
+                    form.appendChild(hidden);
+                }
+                button.closest('.flex').remove();
+            }
+        }
+
+        function autoFill09Bank(input) {
+            if (input.value === '') {
+                input.value = '09';
+            }
+        }
+
+        function validateBankAccountNo(input) {
+            // Remove non-numeric characters
+            input.value = input.value.replace(/[^0-9]/g, '');
+            // Ensure starts with 09
+            if (input.value.length >= 2 && input.value.substring(0, 2) !== '09') {
+                input.value = '09' + input.value.replace(/^09/, '');
+            }
+            // Limit to 11 digits
+            if (input.value.length > 11) {
+                input.value = input.value.substring(0, 11);
+            }
+        }
+
+        function checkBankAccountNo(input) {
+            const value = input.value;
+            if (value.length !== 11 || !value.startsWith('09')) {
+                alert('Account number must be 11 digits and start with 09');
+                input.focus();
+            }
+        }
+
+        function validateBankEmail(input) {
+            const value = input.value;
+            if (value && (!value.includes('@') || !value.endsWith('.com'))) {
+                alert('Email must contain @ and end with .com');
+                input.focus();
+            }
+        }
+
+        function confirmSave() {
+            // Validate bank accounts
+            const bankFields = document.querySelectorAll('#bankContainer input[type="text"]');
+            for (let field of bankFields) {
+                if (!field.value.trim()) {
+                    alert('Please fill in all bank account fields');
+                    field.focus();
+                    return;
+                }
+            }
+
+            if (confirm('Are you sure you want to save the changes?')) {
+                document.querySelector('form').submit();
             }
         }
     </script>

@@ -19,7 +19,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Base URL configuration
-define('BASE_URL', 'http://localhost/bumpcard'); // Change this to your actual URL
+define('BASE_URL', 'http://localhost/Digital-Card'); // Change this to your actual URL
 define('UPLOAD_DIR', __DIR__ . '/../uploads/');
 define('UPLOAD_URL', BASE_URL . '/uploads/');
 
@@ -153,7 +153,7 @@ function uploadFile($file, $allowed_types = ['jpg', 'jpeg', 'png', 'gif'], $max_
     }
     
     // Generate unique filename
-    $filename = generateRandomString() . '.' . $extension;
+    $filename = time() . '_' . $file['name'];
     $filepath = UPLOAD_DIR . $filename;
     
     // Move uploaded file
@@ -206,6 +206,64 @@ function uploadAndSaveSocialMedia($file, $user_id, $platform, $title = null, $li
     } catch(PDOException $e) {
         return ['success' => false, 'error' => 'Database error: ' . $e->getMessage()];
     }
+}
+
+// Helper function to upload bank logo
+function uploadBankLogo($file, $allowed_types = ['jpg', 'jpeg', 'png', 'gif'], $max_size = 5242880) {
+    // $max_size default is 5MB
+
+    if (!isset($file['error']) || is_array($file['error'])) {
+        return ['success' => false, 'error' => 'Invalid file upload'];
+    }
+
+    // Check for upload errors
+    switch ($file['error']) {
+        case UPLOAD_ERR_OK:
+            break;
+        case UPLOAD_ERR_NO_FILE:
+            return ['success' => false, 'error' => 'No file uploaded'];
+        case UPLOAD_ERR_INI_SIZE:
+        case UPLOAD_ERR_FORM_SIZE:
+            return ['success' => false, 'error' => 'File size exceeds limit'];
+        default:
+            return ['success' => false, 'error' => 'Unknown upload error'];
+    }
+
+    // Check file size
+    if ($file['size'] > $max_size) {
+        return ['success' => false, 'error' => 'File size exceeds ' . ($max_size / 1024 / 1024) . 'MB'];
+    }
+
+    // Check file extension
+    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($extension, $allowed_types)) {
+        return ['success' => false, 'error' => 'Invalid file type. Allowed: ' . implode(', ', $allowed_types)];
+    }
+
+    // Define bank logo upload directory
+    $bank_upload_dir = __DIR__ . '/../uploads/banking-logo/';
+    $bank_upload_url = BASE_URL . '/uploads/banking-logo/';
+
+    // Create directory if it doesn't exist
+    if (!file_exists($bank_upload_dir)) {
+        @mkdir($bank_upload_dir, 0777, true);
+    }
+
+    // Generate unique filename
+    $filename = time() . '_' . $file['name'];
+    $filepath = $bank_upload_dir . $filename;
+
+    // Move uploaded file
+    if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+        return ['success' => false, 'error' => 'Failed to move uploaded file'];
+    }
+
+    return [
+        'success' => true,
+        'filename' => $filename,
+        'filepath' => $filepath,
+        'url' => $bank_upload_url . $filename
+    ];
 }
 
 // Helper function to format date

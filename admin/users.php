@@ -111,7 +111,7 @@ $users = $stmt->fetchAll();
                     <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">User</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Company</th>
+                            <th class="px-10 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Company</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Contact</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Template</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Referrals</th>
@@ -126,9 +126,9 @@ $users = $stmt->fetchAll();
                             <td class="px-4 py-3">
                                 <div class="flex items-center space-x-3">
                                     <?php if (!empty($user['photo'])): ?>
-                                    <img src="<?php echo htmlspecialchars($user['photo']); ?>" alt="Profile Photo" class="w-10 h-10 rounded-full object-cover border border-gray-200">
+                                    <img src="<?php echo htmlspecialchars($user['photo']); ?>" alt="Profile Photo" class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
                                     <?php else: ?>
-                                    <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                    <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
                                         <span class="text-sm font-semibold text-gray-600">
                                             <?php echo strtoupper(substr($user['firstname'], 0, 1) . substr($user['lastname'], 0, 1)); ?>
                                         </span>
@@ -149,9 +149,9 @@ $users = $stmt->fetchAll();
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-4 py-3">
-                                <p class="text-sm text-gray-800"><?php echo htmlspecialchars($user['company']); ?></p>
-                                <p class="text-xs text-gray-500"><?php echo htmlspecialchars($user['position']); ?></p>
+                            <td class="px-10 py-3">
+                                <p class="text-sm text-gray-800 truncate"><?php echo htmlspecialchars($user['company']); ?></p>
+                                <p class="text-xs text-gray-500 truncate"><?php echo htmlspecialchars($user['position']); ?></p>
                             </td>
                             <td class="px-4 py-3">
                                 <p class="text-sm text-gray-800"><?php echo htmlspecialchars($user['mobile']); ?></p>
@@ -211,16 +211,21 @@ $users = $stmt->fetchAll();
     <!-- Toggle Status Modal -->
     <div id="toggleModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-lg max-w-md w-full mx-4">
-            <div class="p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Toggle User Status</h3>
-                <p class="text-gray-600 mb-4">
-                    Are you sure you want to change the status of <span id="toggleUserName" class="font-semibold"></span> from <span id="currentStatus" class="font-semibold"></span> to <span id="newStatus" class="font-semibold"></span>?
-                </p>
-                <div class="flex justify-end space-x-3">
-                    <button type="button" onclick="closeToggleModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Cancel</button>
+            <div class="p-10">
+                <h3 class="text-xl font-semibold text-gray-800 mb-8 text-center">Toggle User Status</h3>
+                <div class="text-center mb-8">
+                    <p class="text-gray-600 mb-6">
+                        Are you sure you want to change the status of <strong id="toggleUserName"></strong>?
+                    </p>
+                    <p class="text-sm text-gray-500">
+                        From <span id="currentStatus" class="font-medium"></span> to <span id="newStatus" class="font-medium text-yellow-600"></span>
+                    </p>
+                </div>
+                <div class="flex justify-center space-x-6">
+                    <button type="button" onclick="closeToggleModal()" class="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">Cancel</button>
                     <form method="GET" style="display: inline;">
                         <input type="hidden" name="toggle_status" id="toggleUserId">
-                        <button type="submit" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition">Confirm</button>
+                        <button type="submit" class="px-6 py-3 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition">Confirm</button>
                     </form>
                 </div>
             </div>

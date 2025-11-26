@@ -27,6 +27,27 @@ if (isset($_POST['user_id']) && isset($_POST['platform'])) {
     } else {
         jsonResponse(['success' => false, 'error' => $upload['error'] ?? 'Upload failed'], 400);
     }
+} elseif (isset($_POST['bank_name'])) {
+    // Bank logo upload
+    $bank_name = sanitize($_POST['bank_name']);
+    $account_name = sanitize($_POST['account_name']);
+    $account_no = sanitize($_POST['account_no']);
+    $account_email = isset($_POST['account_email']) ? sanitize($_POST['account_email']) : null;
+
+    $upload = uploadBankLogo($_FILES['file']);
+
+    if ($upload && isset($upload['success']) && $upload['success']) {
+        jsonResponse([
+            'success' => true,
+            'url' => $upload['url'],
+            'bank_name' => $bank_name,
+            'account_name' => $account_name,
+            'account_no' => $account_no,
+            'account_email' => $account_email
+        ]);
+    } else {
+        jsonResponse(['success' => false, 'error' => $upload['error'] ?? 'Upload failed'], 400);
+    }
 } else {
     // Regular file upload
     $upload = uploadFile($_FILES['file']);
